@@ -47,7 +47,7 @@ async fn handle_login(req: LoginRequest, storage: FileStorage) -> Result<impl Re
         .verify_password(&req.password, &users[user_index].password)
         .map_err(|e| warp::reject::custom(e))?
     {
-        return Err(warp::reject::custom(AppError::AuthenticationRequired));
+        return Err(warp::reject::custom(AppError::PasswordError));
     }
 
     // 更新token（完全分离可变操作）

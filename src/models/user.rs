@@ -5,7 +5,6 @@ use uuid::Uuid;
 pub struct User {
     pub id: String,
     pub username: String,
-    #[serde(skip_serializing)]
     pub password: String,
     pub token: String,
 }
