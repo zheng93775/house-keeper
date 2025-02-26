@@ -20,11 +20,17 @@ async fn main() {
 
     // 输出环境变量
     log::info!("=== Environment Variables ===");
-    log::info!("STORAGE_PATH: {}", std::env::var("STORAGE_PATH").unwrap());
-    log::info!("STATIC_PATH: {}", std::env::var("STATIC_PATH").unwrap());
     log::info!(
-        "PORT: {}",
-        std::env::var("PORT").unwrap_or_else(|_| "3030".to_string())
+        "HOUSE_KEEPER_STORAGE_PATH: {}",
+        std::env::var("HOUSE_KEEPER_STORAGE_PATH").unwrap()
+    );
+    log::info!(
+        "HOUSE_KEEPER_STATIC_PATH: {}",
+        std::env::var("HOUSE_KEEPER_STATIC_PATH").unwrap()
+    );
+    log::info!(
+        "HOUSE_KEEPER_PORT: {}",
+        std::env::var("HOUSE_KEEPER_PORT").unwrap_or_else(|_| "3030".to_string())
     );
 
     // 初始化数据目录和文件
@@ -42,18 +48,20 @@ async fn main() {
     }
 
     // 初始化存储服务
-    let storage_path = std::env::var("STORAGE_PATH").expect("STORAGE_PATH must be set");
-    let static_path = std::env::var("STATIC_PATH").expect("STATIC_PATH must be set");
+    let storage_path =
+        std::env::var("HOUSE_KEEPER_STORAGE_PATH").expect("HOUSE_KEEPER_STORAGE_PATH must be set");
+    let static_path =
+        std::env::var("HOUSE_KEEPER_STATIC_PATH").expect("HOUSE_KEEPER_STATIC_PATH must be set");
     let file_storage = FileStorage::new(&storage_path);
 
     // 初始化路由
     let routes = routes::combine_routes(file_storage, static_path).recover(handle_rejection);
 
     // 启动服务
-    let port = std::env::var("PORT")
+    let port = std::env::var("HOUSE_KEEPER_PORT")
         .unwrap_or_else(|_| "3030".to_string())
         .parse::<u16>()
-        .expect("Invalid PORT number");
+        .expect("Invalid HOUSE_KEEPER_PORT number");
 
     log::info!("Server will listen on port: {}", port);
 
@@ -74,7 +82,8 @@ async fn handle_rejection(err: warp::Rejection) -> Result<impl Reply, Infallible
             AppError::ParseError(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::NotFound => (StatusCode::NOT_FOUND, e.to_string()),
             AppError::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-            AppError::UserNotFound => (StatusCode::NOT_FOUND, e.to_string()),
+            AppError::UserNotFound => (StatusCode::FORBIDDEN, e.to_string()),
+            AppError::PasswordError => (StatusCode::FORBIDDEN, e.to_string()),
         }
     } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
         (

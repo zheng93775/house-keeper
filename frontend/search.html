@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>HouseKeeper</title>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/vant@3/lib/index.css" />
+  <script src="https://unpkg.com/vue@3"></script>
+  <script src="https://unpkg.com/vant@3/lib/vant.min.js"></script>
+  <script src="data.js"></script>
+</head>
+
+<body>
+  <div id="app" class="h-screen">
+    <header class="p-4 flex items-center">
+      <a href="index.html">{{ currentHouse.name }}</a>
+      <input type="search" v-model="keyword" autofocus class="flex-1 border border-solid border-blue mx-4"
+        @change="handleSearch" />
+      <span>
+        <van-icon name="search" @click="handleSearch" />
+      </span>
+    </header>
+    <main class="p-4">
+      <div v-if="emptySearchResult">
+        <van-empty description="无匹配结果" />
+      </div>
+      <div v-else>
+        <div v-for="item in resultItems" class="border border-solid border-blue rounded-2xl p-2 bg-lime-300 mb-4">
+          <span class="text-lg text-blue-700" @click="handleSelect(item)">{{ item.navName }}</span>
+          <span class="text-xs ml-4" v-html="item.content"></span>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    if (!houseData.currentHouseId) {
+      location.href = "./house-create.html";
+    } else {
+      const app = Vue.createApp({
+        data: () => ({
+          keyword: '',
+          emptySearchResult: false,
+          resultItems: [],
+          currentHouse,
+        }),
+        methods: {
+          handleSearch() {
+            this.keyword = this.keyword.trim();
+            this.resultItems = [];
+            const searchByKeyword = (item, parentNavName) => {
+              // console.log('searchByKeyword', this.keyword, item.name, parentNavName);
+              const navName = parentNavName + '/' + item.name;
+              if ((item.name && item.name.includes(this.keyword)) || (item.content && item.content.includes(this.keyword))) {
+                // console.log('includes', item.name.includes(this.keyword), item.content.includes(this.keyword));
+                this.resultItems.push({
+                  id: item.id,
+                  navName,
+                  content: item.content ? item.content.replaceAll(this.keyword, `<span class="text-red-500">${this.keyword}</span>`) : ''
+                });
+              }
+              if (item.items) {
+                item.items.forEach(childItem => searchByKeyword(childItem, navName));
+              }
+            }
+            searchByKeyword(currentHouse.value, '');
+            this.emptySearchResult = this.resultItems.length == 0;
+            console.log('this.resultItems', this.resultItems);
+          },
+          handleSelect(item) {
+            selectItem(item.id);
+            location.href = "index.html";
+          }
+        }
+      });
+      app.use(vant);
+      app.mount('#app');
+    }
+  </script>
+</body>
+
+</html>
