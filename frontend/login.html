@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>登录 - HouseKeeper</title>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/vant@3/lib/index.css" />
+  <script src="https://unpkg.com/vue@3"></script>
+  <script src="https://unpkg.com/vant@3/lib/vant.min.js"></script>
+</head>
+
+<body>
+  <div id="app" class="h-screen flex flex-col">
+    <header class="p-4 border-b border-solid border-gray-200">
+      <h1 class="text-xl font-bold text-blue-600">HouseKeeper 登录</h1>
+    </header>
+
+    <main class="flex-1 p-4 min-h-0"> <!-- 修复flex容器高度问题 -->
+      <van-form @submit="handleLogin" class="max-w-md mx-auto">
+        <van-cell-group class="space-y-4">
+          <van-cell>
+            <van-field v-model="form.username" label="用户名" placeholder="请输入用户名"
+              :rules="[{ required: true, message: '请填写用户名' }]" />
+          </van-cell>
+          <van-cell>
+            <van-field v-model="form.password" type="password" label="密码" placeholder="请输入密码"
+              :rules="[{ required: true, message: '请填写密码' }]" />
+          </van-cell>
+        </van-cell-group>
+
+        <div class="mt-6 px-4">
+          <van-button round block type="primary" native-type="submit" :loading="loading">
+            登录
+          </van-button>
+        </div>
+      </van-form>
+    </main>
+  </div>
+
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          form: {
+            username: '',
+            password: ''
+          },
+          loading: false
+        }
+      },
+      methods: {
+        async handleLogin() {
+          this.loading = true;
+          try {
+            const response = await fetch('/login', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(this.form)
+            });
+
+            if (!response.ok) {
+              const error = await response.json();
+              throw new Error(error.message || '登录失败');
+            }
+
+            const data = await response.json();
+            vant.Toast.success(`欢迎回来，${data.username}`);
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1500);
+          } catch (error) {
+            vant.Dialog.alert({
+              title: '登录错误',
+              message: error.message
+            });
+          } finally {
+            this.loading = false;
+          }
+        }
+      }
+    });
+
+    app.use(vant);
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

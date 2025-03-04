@@ -73,29 +73,6 @@ async fn main() {
 }
 
 async fn handle_rejection(err: warp::Rejection) -> Result<impl Reply, Infallible> {
-    let (code, message) = if let Some(e) = err.find::<AppError>() {
-        match e {
-            AppError::AuthenticationRequired => (StatusCode::UNAUTHORIZED, e.to_string()),
-            AppError::PermissionDenied => (StatusCode::FORBIDDEN, e.to_string()),
-            AppError::InvalidVersion => (StatusCode::CONFLICT, e.to_string()),
-            AppError::FileSystemError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg.clone()),
-            AppError::ParseError(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
-            AppError::NotFound => (StatusCode::NOT_FOUND, e.to_string()),
-            AppError::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
-            AppError::UserNotFound => (StatusCode::FORBIDDEN, e.to_string()),
-            AppError::PasswordError => (StatusCode::FORBIDDEN, e.to_string()),
-        }
-    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
-        (
-            StatusCode::METHOD_NOT_ALLOWED,
-            "Method Not Allowed".to_string(),
-        )
-    } else {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Internal Server Error".to_string(),
-        )
-    };
-
-    Ok(warp::reply::with_status(message, code))
+    use crate::models::error::handle_rejection;
+    handle_rejection(err).await
 }

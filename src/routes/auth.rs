@@ -3,9 +3,12 @@ use crate::{
     storage::file_storage::FileStorage,
 };
 use serde::{Deserialize, Serialize};
-
 use std::convert::Infallible;
-use warp::{Filter, Rejection, Reply};
+use warp::{
+    http::StatusCode,
+    reject::{Reject, Rejection},
+    Filter, Reply,
+};
 
 #[derive(Debug, Deserialize)]
 struct LoginRequest {
@@ -31,42 +34,35 @@ pub fn auth_routes(
 }
 
 async fn handle_login(req: LoginRequest, storage: FileStorage) -> Result<impl Reply, Rejection> {
-    // 读取用户数据
-    let mut users: Vec<User> = storage.read_json("user.json").unwrap_or_default();
+    let mut users: Vec<User> = storage.read_json("user.json").map_err(|e| {
+        log::error!("Failed to read user.json: {}", e);
+        AppError::FileSystemError(e.to_string())
+    })?;
+    log::info!("users count: {}", users.len());
 
-    // 查找匹配用户
-    // 查找用户索引
-    let username = req.username.clone();
     let user_index = users
         .iter()
-        .position(|u| u.username == username)
-        .ok_or_else(|| warp::reject::custom(AppError::UserNotFound))?;
+        .position(|u| u.username == req.username)
+        .ok_or_else(|| AppError::UserNotFound)?;
 
-    // 验证密码（使用索引访问）
     if !storage
         .verify_password(&req.password, &users[user_index].password)
-        .map_err(|e| warp::reject::custom(e))?
+        .map_err(|_| AppError::PasswordError)?
     {
-        return Err(warp::reject::custom(AppError::PasswordError));
+        return Err(AppError::PasswordError.into());
     }
 
-    // 更新token（完全分离可变操作）
     let new_token = uuid::Uuid::new_v4().to_string();
+    users[user_index].token = new_token.clone();
 
-    // 创建独立作用域更新token
-    {
-        let user = &mut users[user_index];
-        user.token = new_token.clone();
-    }
+    storage
+        .write_json("user.json", &users)
+        .map_err(|e| AppError::FileSystemError(e.to_string()))?;
 
-    // 先保存users数据
-    storage.write_json("user.json", &users)?;
-
-    // 设置Cookie（使用new_token变量）
     let cookie = format!("token={}; Path=/; HttpOnly; Max-Age=2592000", new_token);
     Ok(warp::reply::with_header(
         warp::reply::json(&LoginResponse {
-            username: username.clone(),
+            username: req.username,
         }),
         "Set-Cookie",
         cookie,
@@ -99,6 +95,6 @@ pub fn auth_filter(
                 .into_iter()
                 .find(|u| u.token == token)
                 .ok_or_else(|| AppError::AuthenticationRequired)
-                .map_err(|e| warp::reject::custom(e))
+                .map_err(|e: AppError| -> Rejection { e.into() })
         })
 }

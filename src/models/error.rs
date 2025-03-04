@@ -1,5 +1,9 @@
-use std::fmt;
-use warp::{http::StatusCode, reject::Reject};
+use std::{convert::Infallible, fmt};
+use warp::{
+    http::StatusCode,
+    reject::{Reject, Rejection},
+    Filter, Reply,
+};
 
 #[derive(Debug)]
 pub enum AppError {
@@ -31,6 +35,29 @@ impl fmt::Display for AppError {
 }
 
 impl Reject for AppError {}
+
+pub async fn handle_rejection(err: Rejection) -> Result<impl Reply, Infallible> {
+    let (code, message) = if let Some(e) = err.find::<AppError>() {
+        (e.status_code(), e.to_string())
+    } else if err.find::<warp::reject::MethodNotAllowed>().is_some() {
+        (
+            StatusCode::METHOD_NOT_ALLOWED,
+            "Method not allowed".to_string(),
+        )
+    } else {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal server error".to_string(),
+        )
+    };
+
+    Ok(warp::reply::with_status(
+        warp::reply::json(&serde_json::json!({
+            "message": message
+        })),
+        code,
+    ))
+}
 
 impl AppError {
     pub fn status_code(&self) -> StatusCode {
