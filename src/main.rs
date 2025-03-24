@@ -52,7 +52,7 @@ async fn main() {
         std::env::var("HOUSE_KEEPER_STORAGE_PATH").expect("HOUSE_KEEPER_STORAGE_PATH must be set");
     let static_path =
         std::env::var("HOUSE_KEEPER_STATIC_PATH").expect("HOUSE_KEEPER_STATIC_PATH must be set");
-    let file_storage = FileStorage::new(&storage_path);
+    let file_storage: FileStorage = FileStorage::new(&storage_path);
 
     // 初始化路由
     let routes = routes::combine_routes(file_storage, static_path).recover(handle_rejection);
@@ -73,6 +73,17 @@ async fn main() {
 }
 
 async fn handle_rejection(err: warp::Rejection) -> Result<impl Reply, Infallible> {
-    use crate::models::error::handle_rejection;
-    handle_rejection(err).await
+    if let Some(app_err) = err.find::<AppError>() {
+        let json = warp::reply::json(&serde_json::json!({
+            "error": app_err.to_string()
+        }));
+        return Ok(warp::reply::with_status(json, StatusCode::UNAUTHORIZED));
+    }
+    let json = warp::reply::json(&serde_json::json!({
+        "error": "Internal server error"
+    }));
+    Ok(warp::reply::with_status(
+        json,
+        StatusCode::INTERNAL_SERVER_ERROR,
+    ))
 }

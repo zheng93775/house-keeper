@@ -1,8 +1,8 @@
 use crate::{
-    models::{error::AppError, house::House},
+    models::{error::AppError, house::House, user::User},
+    routes::auth::auth_filter,
     storage::file_storage::FileStorage,
 };
-use serde_json::json;
 use std::convert::Infallible;
 use uuid;
 use warp::{Filter, Rejection};
@@ -15,6 +15,11 @@ pub fn houses_routes(
         .and(warp::body::json())
         .and(with_storage(storage.clone()))
         .and_then(create_house_handler)
+        .or(warp::path!("houses")
+            .and(warp::get())
+            .and(auth_filter(FileStorage::new("data/")))
+            .and(with_storage(storage.clone()))
+            .and_then(get_my_houses_handler))
 }
 
 async fn create_house_handler(
@@ -47,6 +52,26 @@ async fn create_house_handler(
         })),
         warp::http::StatusCode::CREATED,
     ))
+}
+
+async fn get_my_houses_handler(
+    user: User,
+    storage: FileStorage,
+) -> Result<impl warp::Reply, Rejection> {
+    // 读取房屋数据
+    let houses: Vec<House> = storage
+        .read_json("house.json")
+        .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+    // 过滤属于当前用户的房屋
+    let my_houses = houses
+        .into_iter()
+        .filter(|house| {
+            house.creator == user.id || house.members.iter().any(|member| member.user_id == user.id)
+        })
+        .collect::<Vec<_>>();
+
+    Ok(warp::reply::json(&my_houses))
 }
 
 fn with_storage(

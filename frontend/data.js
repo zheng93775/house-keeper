@@ -4,17 +4,41 @@ const houseData = Vue.reactive({
   currentItemId: localStorage.getItem("housekeeper_item_current") || "",
 });
 
-if (localStorage.getItem("housekeeper_houses")) {
-  const housesStr = localStorage.getItem("housekeeper_houses");
-  const houseIds = housesStr.split(",");
-  for (let i = 0; i < houseIds.length; i++) {
-    const houseId = houseIds[i];
-    const houseStr = localStorage.getItem("housekeeper_house_" + houseId);
-    if (houseStr) {
-      houseData.houses[houseId] = JSON.parse(houseStr);
+// 从接口获取房屋数据
+async function fetchHouses() {
+  try {
+    const response = await fetch("/houses/mine");
+    if (!response.ok) {
+      if (response.status === 401) {
+        // 401 状态码通常表示未授权，即用户未登录
+        window.location.href = "login.html";
+        return;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    const houses = await response.json();
+    houses.forEach((house) => {
+      houseData.houses[house.id] = house;
+    });
+    // 设置当前房屋 ID
+    if (
+      houseData.currentHouseId &&
+      houseData.houses[houseData.currentHouseId]
+    ) {
+      // 当前房屋 ID 存在且对应的房屋数据也存在
+    } else if (Object.keys(houseData.houses).length > 0) {
+      // 如果当前房屋 ID 不存在，选择第一个房屋
+      const firstHouseId = Object.keys(houseData.houses)[0];
+      houseData.currentHouseId = firstHouseId;
+      localStorage.setItem("housekeeper_house_current", firstHouseId);
+    }
+  } catch (error) {
+    console.error("Error fetching houses:", error);
   }
 }
+
+// 页面加载时获取房屋数据
+fetchHouses();
 
 function createHouse(name) {
   const currentHouseId = String(Math.random()).substring(2);
@@ -35,10 +59,29 @@ function createHouse(name) {
 
 function saveCurrentHouse() {
   const house = houseData.houses[houseData.currentHouseId];
-  localStorage.setItem(
-    "housekeeper_house_" + houseData.currentHouseId,
-    JSON.stringify(house)
-  );
+  // 调用后端接口保存当前房屋数据
+  fetch(`/houses/${houseData.currentHouseId}/detail`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      detail: house,
+      version: house.version || "",
+    }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      house.version = data.version;
+    })
+    .catch((error) => {
+      console.error("Error saving current house:", error);
+    });
 }
 
 function addSubItem(name) {
@@ -76,17 +119,31 @@ function deleteCurrent() {
       setTimeout(saveCurrentHouse);
     }
   } else {
-    localStorage.removeItem("housekeeper_house_" + houseData.currentHouseId);
-    delete houseData.houses[houseData.currentHouseId];
-    let housesStr = localStorage.getItem("housekeeper_houses");
-    if (housesStr) {
-      const houseIds = housesStr
-        .split(",")
-        .filter((id) => id != houseData.currentHouseId);
-      localStorage.setItem("housekeeper_houses", houseIds.join(","));
-      if (houseIds.length) selectHouse(houseIds[0]);
-      else selectHouse("");
-    }
+    // 调用后端接口删除当前房屋
+    fetch(`/houses/${houseData.currentHouseId}`, {
+      method: "DELETE",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        localStorage.removeItem(
+          "housekeeper_house_" + houseData.currentHouseId
+        );
+        delete houseData.houses[houseData.currentHouseId];
+        let housesStr = localStorage.getItem("housekeeper_houses");
+        if (housesStr) {
+          const houseIds = housesStr
+            .split(",")
+            .filter((id) => id != houseData.currentHouseId);
+          localStorage.setItem("housekeeper_houses", houseIds.join(","));
+          if (houseIds.length) selectHouse(houseIds[0]);
+          else selectHouse("");
+        }
+      })
+      .catch((error) => {
+        console.error("Error deleting current house:", error);
+      });
   }
 }
 

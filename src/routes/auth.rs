@@ -4,11 +4,7 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
-use warp::{
-    http::StatusCode,
-    reject::{Reject, Rejection},
-    Filter, Reply,
-};
+use warp::{http::StatusCode, reject::Rejection, Filter, Reply};
 
 #[derive(Debug, Deserialize)]
 struct LoginRequest {
