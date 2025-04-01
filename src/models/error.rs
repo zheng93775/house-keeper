@@ -15,6 +15,7 @@ pub enum AppError {
     NotFound,
     InternalServerError,
     UserNotFound,
+    HouseNotFound,
     PasswordError,
 }
 
@@ -29,6 +30,7 @@ impl fmt::Display for AppError {
             AppError::NotFound => write!(f, "Resource not found"),
             AppError::InternalServerError => write!(f, "Internal server error"),
             AppError::UserNotFound => write!(f, "User not found"),
+            AppError::HouseNotFound => write!(f, "House not found"),
             AppError::PasswordError => write!(f, "Invalid password"),
         }
     }
@@ -70,6 +72,7 @@ impl AppError {
             AppError::NotFound => StatusCode::NOT_FOUND,
             AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::UserNotFound => StatusCode::NOT_FOUND,
+            AppError::HouseNotFound => StatusCode::NOT_FOUND,
             AppError::PasswordError => StatusCode::UNAUTHORIZED,
         }
     }

@@ -28,7 +28,14 @@ pub fn houses_routes(
         .and(with_storage(storage.clone()))
         .and_then(get_my_houses_handler);
 
-    create_house.or(get_my_houses)
+    // 新增删除房屋的路由
+    let delete_house = warp::path!("houses" / String)
+        .and(warp::delete())
+        .and(auth_filter(storage.clone()))
+        .and(with_storage(storage.clone()))
+        .and_then(delete_house_handler);
+
+    create_house.or(get_my_houses).or(delete_house)
 }
 
 async fn create_house_handler(
@@ -97,6 +104,48 @@ async fn get_my_houses_handler(
         .collect::<Vec<_>>();
 
     Ok(warp::reply::json(&my_houses))
+}
+
+async fn delete_house_handler(
+    house_id: String,
+    user: User,
+    storage: FileStorage,
+) -> Result<impl warp::Reply, Rejection> {
+    // 读取房屋数据
+    let mut houses: Vec<House> = storage
+        .read_json("house.json")
+        .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+    // 查找要删除的房屋
+    if let Some(index) = houses.iter().position(|house| house.id == house_id) {
+        let house = &houses[index];
+        // 校验房屋创建人是否为当前用户
+        if house.creator != user.id {
+            return Err(warp::reject::custom(AppError::PermissionDenied));
+        }
+
+        // 移除房屋记录
+        houses.remove(index);
+        storage
+            .write_json("house.json", &houses)
+            .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+        // 删除 house/{house-id}.json 文件
+        if let Err(e) = storage.delete_file(&format!("house/{}.json", house_id)) {
+            return Err(warp::reject::custom(AppError::from(e)));
+        }
+
+        // 返回删除成功的响应
+        return Ok(warp::reply::with_status(
+            warp::reply::json(&serde_json::json!({
+                "message": "House deleted successfully"
+            })),
+            warp::http::StatusCode::OK,
+        ));
+    }
+
+    // 若未找到房屋，返回错误
+    Err(warp::reject::custom(AppError::HouseNotFound))
 }
 
 fn with_storage(

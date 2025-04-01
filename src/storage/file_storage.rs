@@ -93,4 +93,9 @@ impl FileStorage {
 
         self.write_json(&format!("house/{}.json", house_id), &updated_data)
     }
+
+    pub fn delete_file(&self, path: &str) -> Result<(), std::io::Error> {
+        let full_path = self.base_path.join(path);
+        fs::remove_file(full_path)
+    }
 }
