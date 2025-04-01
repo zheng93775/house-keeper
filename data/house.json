@@ -3,6 +3,11 @@
     "id": "df83f69d-587a-4952-84e9-aa0f77141b73",
     "name": "ABC",
     "creator": "x9hgnd",
-    "members": []
+    "members": [
+      {
+        "user_id": "hgjerg",
+        "username": "delivery"
+      }
+    ]
   }
 ]

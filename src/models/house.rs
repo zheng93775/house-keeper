@@ -21,6 +21,11 @@ pub struct HouseMember {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SetHouseMembersForm {
+    pub usernames: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HouseDetail {
     pub version: String,
     pub data: Vec<HouseArea>,

@@ -1,7 +1,7 @@
 use crate::{
     models::{
         error::AppError,
-        house::{CreateHouseForm, House, HouseDetail},
+        house::{CreateHouseForm, House, HouseDetail, HouseMember, SetHouseMembersForm},
         user::User,
     },
     routes::auth::auth_filter,
@@ -28,14 +28,24 @@ pub fn houses_routes(
         .and(with_storage(storage.clone()))
         .and_then(get_my_houses_handler);
 
-    // 新增删除房屋的路由
     let delete_house = warp::path!("houses" / String)
         .and(warp::delete())
         .and(auth_filter(storage.clone()))
         .and(with_storage(storage.clone()))
         .and_then(delete_house_handler);
 
-    create_house.or(get_my_houses).or(delete_house)
+    // 新增设置房屋成员列表的路由
+    let set_house_members = warp::path!("houses" / String / "members")
+        .and(warp::put())
+        .and(warp::body::json())
+        .and(auth_filter(storage.clone()))
+        .and(with_storage(storage.clone()))
+        .and_then(set_house_members_handler);
+
+    create_house
+        .or(get_my_houses)
+        .or(delete_house)
+        .or(set_house_members)
 }
 
 async fn create_house_handler(
@@ -148,12 +158,68 @@ async fn delete_house_handler(
     Err(warp::reject::custom(AppError::HouseNotFound))
 }
 
+async fn set_house_members_handler(
+    house_id: String,
+    form: SetHouseMembersForm,
+    user: User,
+    storage: FileStorage,
+) -> Result<impl warp::Reply, Rejection> {
+    // 读取房屋数据
+    let mut houses: Vec<House> = storage
+        .read_json("house.json")
+        .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+    // 查找要修改的房屋
+    if let Some(house) = houses.iter_mut().find(|h| h.id == house_id) {
+        // 校验房屋创建人是否为当前用户
+        if house.creator != user.id {
+            return Err(warp::reject::custom(AppError::PermissionDenied));
+        }
+
+        // 读取用户数据
+        let users: Vec<User> = storage
+            .read_json("user.json")
+            .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+        // 根据用户名列表找到相应的用户
+        let members = form
+            .usernames
+            .iter()
+            .filter_map(|username| {
+                users.iter().find(|u| u.username == *username).map(|u| {
+                    // Create a HouseMember instance here.
+                    // Assume HouseMember has fields id and username.
+                    HouseMember {
+                        user_id: u.id.clone(),
+                        username: u.username.clone(),
+                    }
+                })
+            })
+            .collect::<Vec<HouseMember>>();
+
+        // 修改房屋的 members 字段
+        house.members = members;
+
+        // 保存修改后的房屋数据
+        storage
+            .write_json("house.json", &houses)
+            .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+        // 返回修改成功的响应
+        return Ok(warp::reply::with_status(
+            warp::reply::json(&serde_json::json!({
+                "message": "House members updated successfully"
+            })),
+            warp::http::StatusCode::OK,
+        ));
+    }
+
+    // 若未找到房屋，返回错误
+    Err(warp::reject::custom(AppError::HouseNotFound))
+}
+
 fn with_storage(
     storage: FileStorage,
 ) -> impl Filter<Extract = (FileStorage,), Error = Infallible> + Clone {
     warp::any().map(move || storage.clone())
-}
-
-fn with_user(user: User) -> impl Filter<Extract = (User,), Error = Infallible> + Clone {
-    warp::any().map(move || user.clone())
 }
