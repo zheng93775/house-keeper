@@ -1,0 +1,1 @@
+curl -XPOST -H 'Content-Type: application/json' localhost:3030/api/login -d '{"username":"zhengjh","password":"Smith321"}'

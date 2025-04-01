@@ -10,6 +10,11 @@ pub struct House {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CreateHouseForm {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HouseMember {
     pub user_id: String,
     pub username: String,

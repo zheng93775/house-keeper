@@ -73,6 +73,9 @@ async fn main() {
 }
 
 async fn handle_rejection(err: warp::Rejection) -> Result<impl Reply, Infallible> {
+    // 记录错误原因
+    log::error!("Rejection error: {:?}", err);
+
     if let Some(app_err) = err.find::<AppError>() {
         let json = warp::reply::json(&serde_json::json!({
             "error": app_err.to_string()
