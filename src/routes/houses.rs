@@ -34,7 +34,6 @@ pub fn houses_routes(
         .and(with_storage(storage.clone()))
         .and_then(delete_house_handler);
 
-    // 新增设置房屋成员列表的路由
     let set_house_members = warp::path!("houses" / String / "members")
         .and(warp::put())
         .and(warp::body::json())
@@ -42,10 +41,18 @@ pub fn houses_routes(
         .and(with_storage(storage.clone()))
         .and_then(set_house_members_handler);
 
+    // 新增查询房屋详细数据的路由
+    let get_house_detail = warp::path!("houses" / String / "detail")
+        .and(warp::get())
+        .and(auth_filter(storage.clone()))
+        .and(with_storage(storage.clone()))
+        .and_then(get_house_detail_handler);
+
     create_house
         .or(get_my_houses)
         .or(delete_house)
         .or(set_house_members)
+        .or(get_house_detail)
 }
 
 async fn create_house_handler(
@@ -212,6 +219,36 @@ async fn set_house_members_handler(
             })),
             warp::http::StatusCode::OK,
         ));
+    }
+
+    // 若未找到房屋，返回错误
+    Err(warp::reject::custom(AppError::HouseNotFound))
+}
+
+async fn get_house_detail_handler(
+    house_id: String,
+    user: User,
+    storage: FileStorage,
+) -> Result<impl warp::Reply, Rejection> {
+    // 读取房屋数据
+    let houses: Vec<House> = storage
+        .read_json("house.json")
+        .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+    // 查找要查询的房屋
+    if let Some(house) = houses.iter().find(|h| h.id == house_id) {
+        // 校验当前用户是否为房屋的创建人或成员
+        if house.creator != user.id && !house.members.iter().any(|member| member.user_id == user.id) {
+            return Err(warp::reject::custom(AppError::PermissionDenied));
+        }
+
+        // 读取房屋详细数据
+        let house_detail: HouseDetail = storage
+            .read_json(&format!("house/{}.json", house_id))
+            .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+        // 返回房屋详细数据
+        return Ok(warp::reply::json(&house_detail));
     }
 
     // 若未找到房屋，返回错误
