@@ -98,4 +98,33 @@ impl FileStorage {
         let full_path = self.base_path.join(path);
         fs::remove_file(full_path)
     }
+
+    // 新增的 write_file 方法
+    pub fn write_file(&self, path: &str, bytes: &[u8]) -> Result<(), AppError> {
+        let full_path = self.base_path.join(path);
+        let parent_dir = full_path
+            .parent()
+            .ok_or_else(|| AppError::FileSystemError("Invalid file path".to_string()))?;
+
+        // 创建父目录（如果不存在）
+        fs::create_dir_all(parent_dir).map_err(|e| {
+            AppError::FileSystemError(format!(
+                "Failed to create directory {}: {}",
+                parent_dir.display(),
+                e
+            ))
+        })?;
+
+        // 打开文件以写入数据
+        let mut file = File::create(&full_path).map_err(|e| {
+            AppError::FileSystemError(format!("Failed to create file {}: {}", path, e))
+        })?;
+
+        // 写入数据到文件
+        file.write_all(bytes).map_err(|e| {
+            AppError::FileSystemError(format!("Failed to write to file {}: {}", path, e))
+        })?;
+
+        Ok(())
+    }
 }
