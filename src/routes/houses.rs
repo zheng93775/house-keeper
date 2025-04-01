@@ -41,18 +41,26 @@ pub fn houses_routes(
         .and(with_storage(storage.clone()))
         .and_then(set_house_members_handler);
 
-    // 新增查询房屋详细数据的路由
     let get_house_detail = warp::path!("houses" / String / "detail")
         .and(warp::get())
         .and(auth_filter(storage.clone()))
         .and(with_storage(storage.clone()))
         .and_then(get_house_detail_handler);
 
+    // 新增修改房屋详细数据的路由
+    let update_house_detail = warp::path!("houses" / String / "detail")
+        .and(warp::put())
+        .and(warp::body::json())
+        .and(auth_filter(storage.clone()))
+        .and(with_storage(storage.clone()))
+        .and_then(update_house_detail_handler);
+
     create_house
         .or(get_my_houses)
         .or(delete_house)
         .or(set_house_members)
         .or(get_house_detail)
+        .or(update_house_detail)
 }
 
 async fn create_house_handler(
@@ -249,6 +257,57 @@ async fn get_house_detail_handler(
 
         // 返回房屋详细数据
         return Ok(warp::reply::json(&house_detail));
+    }
+
+    // 若未找到房屋，返回错误
+    Err(warp::reject::custom(AppError::HouseNotFound))
+}
+
+async fn update_house_detail_handler(
+    house_id: String,
+    new_house_detail: HouseDetail,
+    user: User,
+    storage: FileStorage,
+) -> Result<impl warp::Reply, Rejection> {
+    // 读取房屋数据
+    let houses: Vec<House> = storage
+        .read_json("house.json")
+        .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+    // 查找要修改的房屋
+    if let Some(house) = houses.iter().find(|h| h.id == house_id) {
+        // 校验当前用户是否为房屋的创建人或成员
+        if house.creator != user.id && !house.members.iter().any(|member| member.user_id == user.id) {
+            return Err(warp::reject::custom(AppError::PermissionDenied));
+        }
+
+        // 读取房屋详细数据
+        let mut current_house_detail: HouseDetail = storage
+            .read_json(&format!("house/{}.json", house_id))
+            .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+        // 检查版本号是否匹配
+        if current_house_detail.version != new_house_detail.version {
+            return Err(warp::reject::custom(AppError::VersionMismatch));
+        }
+
+        // 生成新的版本号
+        let new_version = uuid::Uuid::new_v4().to_string();
+        current_house_detail.version = new_version.clone();
+        current_house_detail.data = new_house_detail.data;
+
+        // 写入新的房屋详细数据
+        storage
+            .write_json(&format!("house/{}.json", house_id), &current_house_detail)
+            .map_err(|e| warp::reject::custom(AppError::from(e)))?;
+
+        // 返回新的版本号
+        return Ok(warp::reply::with_status(
+            warp::reply::json(&serde_json::json!({
+                "version": new_version
+            })),
+            warp::http::StatusCode::OK,
+        ));
     }
 
     // 若未找到房屋，返回错误

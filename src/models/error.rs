@@ -17,6 +17,7 @@ pub enum AppError {
     UserNotFound,
     HouseNotFound,
     PasswordError,
+    VersionMismatch,
 }
 
 impl fmt::Display for AppError {
@@ -32,6 +33,7 @@ impl fmt::Display for AppError {
             AppError::UserNotFound => write!(f, "User not found"),
             AppError::HouseNotFound => write!(f, "House not found"),
             AppError::PasswordError => write!(f, "Invalid password"),
+            AppError::VersionMismatch => write!(f, "Version Mismatch"),
         }
     }
 }
@@ -74,6 +76,7 @@ impl AppError {
             AppError::UserNotFound => StatusCode::NOT_FOUND,
             AppError::HouseNotFound => StatusCode::NOT_FOUND,
             AppError::PasswordError => StatusCode::UNAUTHORIZED,
+            AppError::VersionMismatch => StatusCode::CONFLICT,
         }
     }
 }
