@@ -1,0 +1,1 @@
+curl -I -X GET -H 'Cookie: token=22a78952-5c7a-4de5-a2b0-fa7dc312ff1e' localhost:3030/api/images/d26ef139-a7d1-45e9-9413-16fbd3c51413.png

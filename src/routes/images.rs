@@ -1,5 +1,7 @@
 use crate::{
-    models::error::AppError, models::user::User, routes::auth::auth_filter,
+    models::error::AppError,
+    models::user::User,
+    routes::auth::auth_filter,
     storage::file_storage::FileStorage,
 };
 use bytes::Buf;
@@ -8,20 +10,32 @@ use std::convert::Infallible;
 use std::ffi::OsStr;
 use std::path::Path;
 use uuid::Uuid;
-use warp::{multipart::FormData, Filter, Rejection}; // 引入 Buf 特征
+use warp::{
+    http::header::{CONTENT_TYPE, CONTENT_DISPOSITION},
+    multipart::FormData,
+    Filter,
+    Rejection,
+};
 
 pub fn image_routes(
     storage: FileStorage,
 ) -> impl Filter<Extract = (impl warp::Reply,), Error = Rejection> + Clone {
     // 图片上传路由，支持 multipart 文件上传
     let upload_image = warp::path!("images")
-        .and(warp::post())
-        .and(warp::multipart::form().max_length(5 * 1024 * 1024))
-        .and(auth_filter(storage.clone()))
-        .and(with_storage(storage.clone()))
-        .and_then(upload_image_handler);
+       .and(warp::post())
+       .and(warp::multipart::form().max_length(5 * 1024 * 1024))
+       .and(auth_filter(storage.clone()))
+       .and(with_storage(storage.clone()))
+       .and_then(upload_image_handler);
 
-    upload_image
+    // 图片下载路由
+    let download_image = warp::path!("images" / String)
+       .and(warp::get())
+       .and(auth_filter(storage.clone()))
+       .and(with_storage(storage.clone()))
+       .and_then(download_image_handler);
+
+    upload_image.or(download_image)
 }
 
 async fn upload_image_handler(
@@ -71,6 +85,38 @@ async fn upload_image_handler(
     }
 
     Err(warp::reject::custom(AppError::ParameterError))
+}
+
+async fn download_image_handler(
+    filename: String,
+    user: User, // 校验登录用户
+    storage: FileStorage,
+) -> Result<impl warp::Reply, Rejection> {
+    let path = format!("images/{}", filename);
+    let file_content = storage
+       .read_file(&path)
+       .map_err(|e| warp::reject::custom(AppError::FileSystemError(e.to_string())))?;
+
+    let content_type = get_content_type(&filename);
+    let content_disposition = format!("attachment; filename={}", filename);
+
+    let response = warp::reply::with_header(
+        warp::reply::with_header(file_content, CONTENT_TYPE, content_type),
+        CONTENT_DISPOSITION,
+        content_disposition,
+    );
+
+    Ok(response)
+}
+
+fn get_content_type(filename: &str) -> &str {
+    let ext = Path::new(filename).extension().and_then(OsStr::to_str).unwrap_or("");
+    match ext {
+        "jpg" | "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        "gif" => "image/gif",
+        _ => "application/octet-stream",
+    }
 }
 
 fn with_storage(

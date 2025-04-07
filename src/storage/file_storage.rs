@@ -127,4 +127,19 @@ impl FileStorage {
 
         Ok(())
     }
+
+    // 新增的 read_file 方法
+    pub fn read_file(&self, path: &str) -> Result<Vec<u8>, AppError> {
+        let full_path = self.base_path.join(path);
+        let mut file = File::open(&full_path).map_err(|e| {
+            AppError::FileSystemError(format!("Failed to open file {}: {}", path, e))
+        })?;
+
+        let mut bytes = Vec::new();
+        file.read_to_end(&mut bytes).map_err(|e| {
+            AppError::FileSystemError(format!("Failed to read file {}: {}", path, e))
+        })?;
+
+        Ok(bytes)
+    }
 }

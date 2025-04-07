@@ -102,6 +102,10 @@ POST 用户名、密码。如果用户名密码能在user.json中匹配成功，
 
 校验登录用户，将图片上传至images目录，文件名应改成随机的文件名，将文件名返回给前端
 
+#### 下载图片
+
+校验登录用户，根据文件名从images目录下载图片
+
 ### 静态目录
 
 根据环境变量获取静态目录的路径，比如 /data/static 。该目录放着所有前端的文件，包括html、js、css、图片等静态资源。服务启动后，将提供web服务功能，比如请求/index.html，则返回/data/static/index.html文件的内容；如果访问/js/jquery.js，则返回/data/static/js/jquery.js。
