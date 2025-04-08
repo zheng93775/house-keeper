@@ -7,7 +7,11 @@ const houseData = Vue.reactive({
 // 从接口获取房屋数据
 async function fetchHouses() {
   try {
-    const response = await fetch("/houses/mine");
+    const response = await fetch("/api/houses", {
+      headers: {
+        Cookie: `token=${localStorage.getItem("token")}`,
+      },
+    });
     if (!response.ok) {
       if (response.status === 401) {
         // 401 状态码通常表示未授权，即用户未登录
@@ -45,28 +49,49 @@ function createHouse(name) {
   houseData.currentHouseId = currentHouseId;
   houseData.currentItemId = "";
   houseData.houses[currentHouseId] = { id: "", name, items: [] };
-  let housesStr = localStorage.getItem("housekeeper_houses");
-  if (housesStr) {
-    housesStr += "," + currentHouseId;
-  } else {
-    housesStr = currentHouseId;
-  }
-  localStorage.setItem("housekeeper_houses", housesStr);
-  localStorage.setItem("housekeeper_house_current", currentHouseId);
-  localStorage.setItem("housekeeper_item_current", "");
-  saveCurrentHouse();
+
+  fetch("/api/houses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Cookie: `token=${localStorage.getItem("token")}`,
+    },
+    body: JSON.stringify({ name }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      let housesStr = localStorage.getItem("housekeeper_houses");
+      if (housesStr) {
+        housesStr += "," + currentHouseId;
+      } else {
+        housesStr = currentHouseId;
+      }
+      localStorage.setItem("housekeeper_houses", housesStr);
+      localStorage.setItem("housekeeper_house_current", currentHouseId);
+      localStorage.setItem("housekeeper_item_current", "");
+      saveCurrentHouse();
+    })
+    .catch((error) => {
+      console.error("Error creating house:", error);
+    });
 }
 
 function saveCurrentHouse() {
   const house = houseData.houses[houseData.currentHouseId];
   // 调用后端接口保存当前房屋数据
-  fetch(`/houses/${houseData.currentHouseId}/detail`, {
+  fetch(`/api/houses/${houseData.currentHouseId}/detail`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      Cookie: `token=${localStorage.getItem("token")}`,
     },
     body: JSON.stringify({
-      detail: house,
+      data: house,
       version: house.version || "",
     }),
   })
@@ -120,8 +145,11 @@ function deleteCurrent() {
     }
   } else {
     // 调用后端接口删除当前房屋
-    fetch(`/houses/${houseData.currentHouseId}`, {
+    fetch(`/api/houses/${houseData.currentHouseId}`, {
       method: "DELETE",
+      headers: {
+        Cookie: `token=${localStorage.getItem("token")}`,
+      },
     })
       .then((response) => {
         if (!response.ok) {
