@@ -44,43 +44,6 @@ async function fetchHouses() {
 // 页面加载时获取房屋数据
 fetchHouses();
 
-function createHouse(name) {
-  const currentHouseId = String(Math.random()).substring(2);
-  houseData.currentHouseId = currentHouseId;
-  houseData.currentItemId = "";
-  houseData.houses[currentHouseId] = { id: "", name, items: [] };
-
-  fetch("/api/houses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Cookie: `token=${localStorage.getItem("token")}`,
-    },
-    body: JSON.stringify({ name }),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((data) => {
-      let housesStr = localStorage.getItem("housekeeper_houses");
-      if (housesStr) {
-        housesStr += "," + currentHouseId;
-      } else {
-        housesStr = currentHouseId;
-      }
-      localStorage.setItem("housekeeper_houses", housesStr);
-      localStorage.setItem("housekeeper_house_current", currentHouseId);
-      localStorage.setItem("housekeeper_item_current", "");
-      saveCurrentHouse();
-    })
-    .catch((error) => {
-      console.error("Error creating house:", error);
-    });
-}
-
 function saveCurrentHouse() {
   const house = houseData.houses[houseData.currentHouseId];
   // 调用后端接口保存当前房屋数据

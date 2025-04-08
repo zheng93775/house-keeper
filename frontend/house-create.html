@@ -10,31 +10,16 @@
   <link rel="stylesheet" href="https://unpkg.com/vant@3/lib/index.css" />
   <script src="https://unpkg.com/vue@3"></script>
   <script src="https://unpkg.com/vant@3/lib/vant.min.js"></script>
-  <script src="data.js"></script>
 </head>
 
 <body>
   <div id="app" class="h-screen flex flex-col justify-center items-center">
     <van-cell-group inset>
-      <van-field v-model="name" label="名称" placeholder="请输入住房名称" />
+      <van-field v-model="name" label="名称" placeholder="请输入房屋名称" />
     </van-cell-group>
-    <van-button class="mt-4" type="primary" @click="handleCreateHouse">创建住房</van-button>
+    <van-button class="mt-4" type="primary" @click="handleCreateHouse">创建房屋</van-button>
   </div>
-  <script>
-    const app = Vue.createApp({
-      data: () => {
-        name: ''
-      },
-      methods: {
-        handleCreateHouse() {
-          createHouse(this.name);
-          location.href = "./index.html"
-        }
-      }
-    });
-    app.use(vant);
-    app.mount('#app');
-  </script>
+  <script src="js/house-create.js"></script>
 </body>
 
 </html>
