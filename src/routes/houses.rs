@@ -92,7 +92,8 @@ async fn create_house_handler(
     // 创建 house/{house-id}.json 空数据文件
     let empty_house_detail = HouseDetail {
         version: uuid::Uuid::new_v4().to_string(),
-        data: Vec::new(),
+        name: create_house_form.name.clone(),
+        items: Vec::new(),
     };
     storage
         .write_json(&format!("house/{}.json", house_id), &empty_house_detail)
@@ -128,7 +129,10 @@ async fn get_my_houses_handler(
         })
         .collect::<Vec<_>>();
 
-    Ok(warp::reply::json(&my_houses))
+    Ok(warp::reply::json(&serde_json::json!({
+        "user_id": user.id,
+        "houses": &my_houses
+    })))
 }
 
 async fn delete_house_handler(
@@ -246,7 +250,8 @@ async fn get_house_detail_handler(
     // 查找要查询的房屋
     if let Some(house) = houses.iter().find(|h| h.id == house_id) {
         // 校验当前用户是否为房屋的创建人或成员
-        if house.creator != user.id && !house.members.iter().any(|member| member.user_id == user.id) {
+        if house.creator != user.id && !house.members.iter().any(|member| member.user_id == user.id)
+        {
             return Err(warp::reject::custom(AppError::PermissionDenied));
         }
 
@@ -277,7 +282,8 @@ async fn update_house_detail_handler(
     // 查找要修改的房屋
     if let Some(house) = houses.iter().find(|h| h.id == house_id) {
         // 校验当前用户是否为房屋的创建人或成员
-        if house.creator != user.id && !house.members.iter().any(|member| member.user_id == user.id) {
+        if house.creator != user.id && !house.members.iter().any(|member| member.user_id == user.id)
+        {
             return Err(warp::reject::custom(AppError::PermissionDenied));
         }
 
@@ -294,7 +300,7 @@ async fn update_house_detail_handler(
         // 生成新的版本号
         let new_version = uuid::Uuid::new_v4().to_string();
         current_house_detail.version = new_version.clone();
-        current_house_detail.data = new_house_detail.data;
+        current_house_detail.items = new_house_detail.items;
 
         // 写入新的房屋详细数据
         storage

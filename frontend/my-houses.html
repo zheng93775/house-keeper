@@ -27,9 +27,27 @@
           class="border border-solid border-gray-300 rounded-md p-4 mb-4 cursor-pointer" @click="selectHouse(house.id)">
           <h2 class="text-lg font-bold">{{ house.name }}</h2>
           <p class="text-gray-500">ID: {{ house.id }}</p>
+          <!-- 添加成员管理按钮 -->
+          <van-button v-if="house.creator == houseData.currentUserId" type="info"
+            @click.stop="manageMembers(house)">成员管理</van-button>
         </div>
       </div>
     </main>
+    <!-- 添加成员管理对话框 -->
+    <van-dialog v-model:show="houseData.memberModalVisible" title="成员管理" show-cancel-button cancel-button-text="取消"
+      confirm-button-text="保存" @confirm="saveMembers">
+      <van-cell-group inset>
+        <div v-for="(member, index) in houseData.currentHouse.members" :key="index"
+          class="flex justify-between items-center mb-2">
+          <span>{{ member.username }}</span>
+          <van-button type="danger" size="mini" @click="deleteMember(index)">删除</van-button>
+        </div>
+        <div class="flex justify-between items-center mb-2">
+          <input v-model="houseData.newMemberUsername" /><van-button type="primary" size="mini"
+            @click="addMember">添加</van-button>
+        </div>
+      </van-cell-group>
+    </van-dialog>
   </div>
   <script src="js/my-houses.js"></script>
 </body>

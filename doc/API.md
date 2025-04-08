@@ -186,11 +186,11 @@ GET /houses/jjd8ghd/detail
         {
             "name": "客厅",
             "content": "沙发，茶几",
-            "children": [
+            "items": [
                 {
                     "name": "电视柜",
                     "content": "电视机、吹风机",
-                    "children": []
+                    "items": []
                 }
             ]
         }
@@ -230,11 +230,11 @@ String
             {
                 "name": "客厅",
                 "content": "沙发，茶几，新物品",
-                "children": [
+                "items": [
                     {
                         "name": "电视柜",
                         "content": "电视机、吹风机",
-                        "children": []
+                        "items": []
                     }
                 ]
             }

@@ -1,10 +1,18 @@
 {
-  "version": "3aed8f42-ba42-4193-b3b5-e40b03cfbce7",
-  "data": [
+  "version": "340015e2-7317-4cae-90c5-1aec4127e639",
+  "name": "ABC",
+  "items": [
     {
+      "id": "329446733",
       "name": "Kitchen",
       "content": "guo wan piao pen",
-      "children": []
+      "items": []
+    },
+    {
+      "id": "36811212846391084",
+      "name": "BedRoom1",
+      "content": "",
+      "items": []
     }
   ]
 }

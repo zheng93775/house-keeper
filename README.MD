@@ -52,11 +52,11 @@ images/xxxxxxxyyyyyyyyy.jpg --- 图片
     {
       name: "客厅",
       content: "沙发，茶几",
-      children: [
+      items: [
         {
           name: "电视柜",
           content: "电视机、吹风机",
-          children: []
+          items: []
         }
       ]
     }

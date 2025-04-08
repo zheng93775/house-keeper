@@ -28,14 +28,16 @@ pub struct SetHouseMembersForm {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HouseDetail {
     pub version: String,
-    pub data: Vec<HouseArea>,
+    pub name: String,
+    pub items: Vec<HouseArea>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct HouseArea {
+    pub id: String,
     pub name: String,
     pub content: String,
-    pub children: Vec<HouseArea>,
+    pub items: Vec<HouseArea>,
 }
 
 impl House {
@@ -53,7 +55,8 @@ impl HouseDetail {
     pub fn new() -> Self {
         Self {
             version: Uuid::new_v4().to_string(),
-            data: Vec::new(),
+            name: String::new(),
+            items: Vec::new(),
         }
     }
 }
