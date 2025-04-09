@@ -133,6 +133,105 @@ async function fetchHouseDetail() {
   }
 }
 
+// 处理图片上传
+async function handleFileChange(event) {
+  const files = event.target.files;
+  if (files.length > 0) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      // 验证文件类型是否为图片
+      if (!file.type.startsWith("image/")) {
+        console.error("请选择图片类型的文件");
+        continue;
+      }
+
+      const compressedImage = await compressImage(file);
+      // 将压缩后的图片转换为 Blob 对象
+      const blob = await (await fetch(compressedImage)).blob();
+      const formData = new FormData();
+      formData.append("image", blob, `image_${Date.now()}.webp`);
+
+      try {
+        // 调用服务端的图片上传接口
+        const response = await fetch("/api/images", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const imageUrl = `/api/images/${data.file_name}`;
+
+        if (!currentItem.value.images) {
+          currentItem.value.images = [];
+        }
+        currentItem.value.images.push(imageUrl);
+      } catch (error) {
+        console.error("Error uploading image:", error);
+      }
+    }
+    setTimeout(saveCurrentHouse);
+    // 清空文件输入框
+    event.target.value = "";
+  }
+}
+
+// 压缩图片
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const maxWidth = 800;
+        const maxHeight = 600;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = height * (maxWidth / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = width * (maxHeight / height);
+          height = maxHeight;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onload = (event) => {
+              resolve(event.target.result);
+            };
+            reader.onerror = reject;
+          },
+          "image/webp",
+          0.8
+        );
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+}
+
+// 删除图片
+function deleteImage(index) {
+  if (currentItem.value.images) {
+    currentItem.value.images.splice(index, 1);
+    setTimeout(saveCurrentHouse);
+  }
+}
+
 if (!houseData.currentHouseId) {
   location.href = "./house-create.html";
 } else {
@@ -149,6 +248,8 @@ if (!houseData.currentHouseId) {
         { text: "创建新的房屋", value: "house-create.html" },
         { text: "我的房屋列表", value: "my-houses.html" },
       ],
+      // 引用文件输入框
+      fileInput: null,
     }),
     methods: {
       showAddModal() {
@@ -179,6 +280,17 @@ if (!houseData.currentHouseId) {
       onMenuChange(value) {
         location.href = value;
       },
+      // 处理图片上传按钮点击事件
+      handleUpload() {
+        this.$refs.fileInput.click();
+      },
+      // 处理文件选择事件
+      handleFileChange,
+      // 删除图片
+      deleteImage,
+    },
+    mounted() {
+      this.fileInput = this.$refs.fileInput;
     },
   });
   app.use(vant);

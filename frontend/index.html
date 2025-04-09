@@ -33,7 +33,7 @@
         <van-icon name="search" class="cursor-pointer" @click="handleSearch" />
       </span>
     </header>
-    <main class="p-4">
+    <main v-if="currentItem" class="p-4">
       <div v-for="item in currentItem.items" class="border border-solid border-blue rounded-2xl p-2 bg-lime-300 mb-4">
         <van-icon name="bag" />
         <span class="text-lg text-blue-700 mx-2 cursor-pointer" @click="handleSelect(item)">{{ item.name }}</span>
@@ -42,8 +42,17 @@
       <div v-if="navItems.length > 1">
         <textarea class="w-full border border-solid border-gray" v-model="currentItem.content" rows="5"></textarea>
       </div>
+      <!-- 展示图片的区域 -->
+      <div v-if="currentItem.images && currentItem.images.length > 0">
+        <div v-for="(image, index) in currentItem.images" class="flex items-center mb-2">
+          <img :src="image" alt="Uploaded Image" style="width: calc(100% - 20px)"
+            class="w-auto h-auto object-cover mr-2">
+          <van-icon name="close" class="text-red-600 cursor-pointer" @click="deleteImage(index)" />
+        </div>
+      </div>
       <div class="flex justify-center mt-4">
         <van-button type="primary" @click="handleSave">保存</van-button>
+        <van-button v-if="navItems.length > 1" class="ml-4" @click="handleUpload">上传图片</van-button>
         <van-button class="mx-4" @click="showAddModal">添加区域</van-button>
         <van-button type="danger" @click="handleDelete">删除</van-button>
       </div>
@@ -53,6 +62,8 @@
           <van-field v-model="areaName" label="名称" placeholder="请输入区域名称" />
         </van-cell-group>
       </van-dialog>
+      <!-- 隐藏的文件输入框，添加 accept 属性 -->
+      <input type="file" ref="fileInput" @change="handleFileChange" style="display: none;" accept="image/*">
     </main>
   </div>
   <script src="js/index.js"></script>

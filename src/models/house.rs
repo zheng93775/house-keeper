@@ -37,6 +37,7 @@ pub struct HouseArea {
     pub id: String,
     pub name: String,
     pub content: String,
+    pub images: Vec<String>,
     pub items: Vec<HouseArea>,
 }
 

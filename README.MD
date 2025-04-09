@@ -15,7 +15,7 @@ house.json --- 存储房屋列表数据，json数据
 house --- 房屋目录
 house/{house-id}.json --- 某个房屋的数据，json对象
 images --- 图片目录
-images/xxxxxxxyyyyyyyyy.jpg --- 图片
+images/xxxxxxxyyyyyyyyy.webp --- 图片
 
 #### user.json 数据示例
 
