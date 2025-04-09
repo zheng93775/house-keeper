@@ -13,13 +13,15 @@ pub fn combine_routes(
     let auth = auth_routes(file_storage.clone());
     let houses = houses_routes(file_storage.clone());
     let images = image_routes(file_storage.clone());
+    let backup = backup::backup_routes();
 
-    let api_routes = api_prefix.and(auth.or(houses).or(images));
+    let api_routes = api_prefix.and(auth.or(houses).or(images).or(backup));
 
     api_routes.or(static_files_routes(static_path))
 }
 
 pub mod auth;
+pub mod backup;
 pub mod houses;
 pub mod static_files;
 

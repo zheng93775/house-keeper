@@ -19,6 +19,7 @@ pub enum AppError {
     PasswordError,
     VersionMismatch,
     ParameterError,
+    BackupError,
 }
 
 impl fmt::Display for AppError {
@@ -36,6 +37,7 @@ impl fmt::Display for AppError {
             AppError::PasswordError => write!(f, "Invalid password"),
             AppError::VersionMismatch => write!(f, "Version Mismatch"),
             AppError::ParameterError => write!(f, "Parameter Error"),
+            AppError::BackupError => write!(f, "Backup Error"),
         }
     }
 }
@@ -80,6 +82,7 @@ impl AppError {
             AppError::PasswordError => StatusCode::UNAUTHORIZED,
             AppError::VersionMismatch => StatusCode::CONFLICT,
             AppError::ParameterError => StatusCode::BAD_REQUEST,
+            AppError::BackupError => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }
