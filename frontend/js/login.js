@@ -22,7 +22,7 @@ const app = Vue.createApp({
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.message || "登录失败");
+          throw new Error(error.error || "登录失败");
         }
 
         const data = await response.json();

@@ -43,6 +43,14 @@ function saveCurrentHouse() {
   })
     .then((response) => {
       if (!response.ok) {
+        if (response.status === 401) {
+          vant.Toast.fail("请先登录后，再进行操作");
+          setTimeout(() => {
+            window.location.href = "login.html";
+          }, 2000);
+        } else if (response.status === 409) {
+          vant.Toast.fail("已经有其他人修改了数据，请刷新页面");
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
@@ -115,10 +123,7 @@ async function fetchHouseDetail() {
     );
     if (!response.ok) {
       if (response.status === 401) {
-        Toast.fail("鉴权失败，请重新登录");
-        setTimeout(() => {
-          window.location.href = "login.html";
-        }, 2000);
+        window.location.href = "login.html";
         return;
       }
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -126,7 +131,7 @@ async function fetchHouseDetail() {
     houseData.currentHouse = await response.json();
   } catch (error) {
     console.error("Error fetching houses:", error);
-    Toast.fail("获取房屋列表失败: " + error);
+    vant.Toast.fail("获取房屋列表失败: " + error);
     setTimeout(() => {
       window.location.href = "login.html";
     }, 2000);

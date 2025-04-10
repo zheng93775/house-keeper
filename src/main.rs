@@ -77,10 +77,11 @@ async fn handle_rejection(err: warp::Rejection) -> Result<impl Reply, Infallible
     log::error!("Rejection error: {:?}", err);
 
     if let Some(app_err) = err.find::<AppError>() {
+        let status_code = app_err.status_code();
         let json = warp::reply::json(&serde_json::json!({
             "error": app_err.to_string()
         }));
-        return Ok(warp::reply::with_status(json, StatusCode::UNAUTHORIZED));
+        return Ok(warp::reply::with_status(json, status_code));
     }
     let json = warp::reply::json(&serde_json::json!({
         "error": "Internal server error"

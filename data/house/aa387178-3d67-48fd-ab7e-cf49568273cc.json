@@ -6,9 +6,7 @@
       "id": "8279681213337826",
       "name": "BedRoom1",
       "content": "abccddff asdfads sdfasdfa asdf asdfas dfads",
-      "images": [
-        "/api/images/6a6b584b-4a5c-45da-ba55-b9886304dc62.webp"
-      ],
+      "images": ["/api/images/6a6b584b-4a5c-45da-ba55-b9886304dc62.webp"],
       "items": [
         {
           "id": "033509044207603145",
