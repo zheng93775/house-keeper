@@ -70,6 +70,7 @@ function addSubItem(name) {
     name,
     content: "",
     items: [],
+    images: [],
   };
   currentItem.value.items.push(newItem);
   setTimeout(saveCurrentHouse);

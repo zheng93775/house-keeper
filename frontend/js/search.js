@@ -71,8 +71,12 @@ if (!houseData.currentHouseId) {
             );
           }
         };
-        searchByKeyword(this.houseData.currentHouse, "");
-        this.emptySearchResult = this.resultItems.length == 0;
+        if (this.keyword) {
+          searchByKeyword(this.houseData.currentHouse, "");
+          this.emptySearchResult = this.resultItems.length == 0;
+        } else {
+          this.emptySearchResult = true;
+        }
         console.log("this.resultItems", this.resultItems);
       },
       handleSelect(item) {

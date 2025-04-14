@@ -6,18 +6,17 @@
   <meta charset="utf-8">
   <meta name="viewport"
     content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <script src="./lib/tailwindcss@3.4.16.min.js"></script>
+  <link rel="stylesheet" href="./lib/bootstrap@4.1.3.min.css">
   <link rel="stylesheet" href="./lib/vant@3.6.16.min.css" />
   <script src="./lib/vue@3.5.13.global.prod.js"></script>
   <script src="./lib/vant@3.6.16.min.js"></script>
 </head>
 
 <body>
-  <div id="app" class="h-screen">
-    <header class="p-4 flex items-center">
-      <a class="text-blue-600" href="index.html">{{ houseData?.currentHouse?.name }}</a>
-      <input type="search" v-model="keyword" autofocus class="flex-1 border border-solid border-blue mx-4"
-        @change="handleSearch" />
+  <div id="app" class="vh-100">
+    <header class="p-4 d-flex align-items-center">
+      <a class="text-primary" href="index.html">{{ houseData?.currentHouse?.name }}</a>
+      <input type="search" v-model="keyword" autofocus class="flex border border-primary mx-4" @change="handleSearch" />
       <span>
         <van-icon name="search" @click="handleSearch" />
       </span>
@@ -27,9 +26,9 @@
         <van-empty description="无匹配结果" />
       </div>
       <div v-else>
-        <div v-for="item in resultItems" class="border border-solid border-blue rounded-2xl p-2 bg-lime-300 mb-4">
-          <span class="text-lg text-blue-700 cursor-pointer" @click="handleSelect(item)">{{ item.navName }}</span>
-          <span class="text-xs ml-4" v-html="item.content"></span>
+        <div v-for="item in resultItems" class="border border-primary rounded-lg p-2 bg-success mb-4">
+          <span class="h5 text-primary" style="cursor: pointer;" @click="handleSelect(item)">{{ item.navName }}</span>
+          <span class="small ml-4" v-html="item.content"></span>
         </div>
       </div>
     </main>
