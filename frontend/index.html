@@ -14,9 +14,8 @@
 
 <body>
   <div id="app" class="h-screen">
-    <header class="p-4 flex justify-between items-center">
-      <!-- 添加菜单按钮 -->
-      <van-dropdown-menu>
+    <header class="p-4 flex justify-between items-center flex-nowrap">
+      <van-dropdown-menu style="width: 50px">
         <van-dropdown-item title="|||" :options="menuOptions" @change="onMenuChange">
           <template #title>
             <van-icon name="apps-o" />
