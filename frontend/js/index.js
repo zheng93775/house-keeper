@@ -238,7 +238,7 @@ function deleteImage(index) {
 }
 
 if (!houseData.currentHouseId) {
-  location.href = "./house-create.html";
+  location.href = "./my-houses.html";
 } else {
   fetchHouseDetail();
   const app = Vue.createApp({
