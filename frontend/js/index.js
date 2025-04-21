@@ -246,6 +246,8 @@ if (!houseData.currentHouseId) {
     data: () => ({
       addModalVisible: false,
       areaName: "",
+      renameModalVisible: false,
+      newName: "",
       houseData,
       currentItem,
       navItems,
@@ -253,19 +255,20 @@ if (!houseData.currentHouseId) {
       menuOptions: [
         { text: "创建新的房屋", value: "house-create.html" },
         { text: "我的房屋列表", value: "my-houses.html" },
+        { text: "保存", value: "save" },
+        { text: "重命名", value: "rename" },
+        { text: "添加区域", value: "addArea" },
+        { text: "删除", value: "delete" },
       ],
       // 引用文件输入框
       fileInput: null,
     }),
     methods: {
-      showAddModal() {
-        this.addModalVisible = true;
-        this.areaName = "";
-      },
       handleAdd() {
         addSubItem(this.areaName);
       },
-      handleSave() {
+      handleRename() {
+        currentItem.value.name = this.newName;
         setTimeout(saveCurrentHouse);
       },
       handleSearch() {
@@ -284,7 +287,26 @@ if (!houseData.currentHouseId) {
       },
       // 处理菜单选择事件
       onMenuChange(value) {
-        location.href = value;
+        if (value.endsWith(".html")) {
+          location.href = value;
+          return;
+        }
+        switch (value) {
+          case "save":
+            setTimeout(saveCurrentHouse);
+            break;
+          case "addArea":
+            this.addModalVisible = true;
+            this.areaName = "";
+            break;
+          case "delete":
+            this.handleDelete();
+            break;
+          case "rename":
+            this.renameModalVisible = true;
+            this.newName = currentItem.value.name;
+            break;
+        }
       },
       // 处理图片上传按钮点击事件
       handleUpload() {
