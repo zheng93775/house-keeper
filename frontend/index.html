@@ -8,7 +8,8 @@
     content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="./lib/bootstrap@4.1.3.min.css">
   <link rel="stylesheet" href="./lib/vant@3.6.16.min.css" />
-  <script src="./lib/vue@3.5.13.global.prod.js"></script>
+  <script src="https://unpkg.com/vue@3"></script>
+  <!-- <script src="./lib/vue@3.5.13.global.prod.js"></script> -->
   <script src="./lib/vant@3.6.16.min.js"></script>
 </head>
 
@@ -68,6 +69,12 @@
       <!-- 隐藏的文件输入框，添加 accept 属性 -->
       <input type="file" ref="fileInput" @change="handleFileChange" style="display: none;" accept="image/*">
     </main>
+    <van-dialog v-model:show="moveModalVisible" title="移动" show-cancel-button cancel-button-text="取消"
+      confirm-button-text="确定" @confirm="handleMoveConfirm">
+      <van-cascader v-model="selectItemId" :closeable="false" :options="treeData"
+        style="margin-top: -50px; max-height: 60vh;">
+      </van-cascader>
+    </van-dialog>
   </div>
   <script src="js/index.js"></script>
 </body>

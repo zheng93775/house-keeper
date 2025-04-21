@@ -4,14 +4,14 @@ const houseData = Vue.reactive({
   currentHouse: null,
 });
 
-const navItems = Vue.computed(() => {
+function findItemChain(targetItemId) {
   const result = [];
   if (!houseData.currentHouse) return result;
   const findItem = (items) => {
     if (!items) return false;
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.id == houseData.currentItemId) {
+      if (item.id == targetItemId) {
         result.push(item);
         return true;
       }
@@ -25,6 +25,10 @@ const navItems = Vue.computed(() => {
   findItem(houseData.currentHouse.items);
   result.splice(0, 0, houseData.currentHouse);
   return result;
+}
+
+const navItems = Vue.computed(() => {
+  return findItemChain(houseData.currentItemId);
 });
 
 const currentItem = Vue.computed(() => {
@@ -238,6 +242,19 @@ function deleteImage(index) {
   }
 }
 
+function generateTreeData(item) {
+  const result = {
+    text: item.name,
+    value: item.id || item.version,
+  };
+  if (item.items && item.items.length > 0) {
+    result.children = item.items
+      .map((child) => generateTreeData(child))
+      .filter((child) => child.value != currentItem.value.id);
+  }
+  return result;
+}
+
 if (!houseData.currentHouseId) {
   location.href = "./my-houses.html";
 } else {
@@ -258,10 +275,14 @@ if (!houseData.currentHouseId) {
         { text: "保存", value: "save" },
         { text: "重命名", value: "rename" },
         { text: "添加区域", value: "addArea" },
+        { text: "移动", value: "move" },
         { text: "删除", value: "delete" },
       ],
       // 引用文件输入框
       fileInput: null,
+      moveModalVisible: false, // 移动对话框显示状态
+      selectItemId: null, // 目标选择项
+      treeData: [], // 树状选择数据
     }),
     methods: {
       handleAdd() {
@@ -270,6 +291,42 @@ if (!houseData.currentHouseId) {
       handleRename() {
         currentItem.value.name = this.newName;
         setTimeout(saveCurrentHouse);
+      },
+      // 处理移动选项
+      handleMove() {
+        if (navItems.value.length <= 1) return;
+        this.moveModalVisible = true;
+        this.treeData = [generateTreeData(houseData.currentHouse)];
+      },
+      // 处理移动对话框确认事件
+      handleMoveConfirm() {
+        // console.log("this.selectItemId", this.selectItemId);
+        if (this.selectItemId) {
+          const navSize = navItems.value.length;
+          if (navSize > 1) {
+            const current = currentItem.value;
+            // 从原父项中移除当前项
+            const parentItem = navItems.value[navSize - 2];
+            // console.log("parentItem", parentItem);
+            if (parentItem && parentItem.items) {
+              parentItem.items = parentItem.items.filter(
+                (item) => item.id !== current.id
+              );
+            }
+            // 添加到目标项
+            const targetItemChain = findItemChain(this.selectItemId);
+            if (targetItemChain.length > 0) {
+              const targetParentItem =
+                targetItemChain[targetItemChain.length - 1];
+              if (!targetParentItem.items) {
+                targetParentItem.items = [];
+              }
+              targetParentItem.items.push(current);
+            }
+            setTimeout(saveCurrentHouse);
+          }
+        }
+        this.moveModalVisible = false;
       },
       handleSearch() {
         location.href = "search.html";
@@ -285,7 +342,7 @@ if (!houseData.currentHouseId) {
           deleteCurrentItem();
         });
       },
-      // 处理菜单选择事件
+      // 处理菜单选择事件，添加对“移动”选项的处理
       onMenuChange(value) {
         if (value.endsWith(".html")) {
           location.href = value;
@@ -305,6 +362,9 @@ if (!houseData.currentHouseId) {
           case "rename":
             this.renameModalVisible = true;
             this.newName = currentItem.value.name;
+            break;
+          case "move":
+            this.handleMove();
             break;
         }
       },
